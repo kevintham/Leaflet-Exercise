@@ -1,0 +1,73 @@
+---
+title: "Recorded Tornado Events in the US in the years 1950-2011"
+author: "Kevin Tham"
+date: "May 26, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, include=FALSE}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(knitr, dplyr, timeDate, leaflet, htmltools)
+```
+
+```{r, cache=TRUE, include=FALSE}
+destfile <- 'repdata%2Fdata%2FStormData.csv.bz2'
+url <- 'https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2'
+
+if (!file.exists(destfile))
+  download.file(url, destfile, method = "auto")
+
+df <- read.csv(destfile)
+```
+
+
+```{r, include=FALSE}
+df_filtered <- select(df, EVTYPE, STATE__, FATALITIES, INJURIES, 
+                      LATITUDE, LONGITUDE)
+```
+
+```{r, include=FALSE}
+event <- df_filtered$EVTYPE
+
+event <- gsub('.*TORNADO.*', 'TORNADO', event, ignore.case=TRUE)
+
+#table(grep('tornado',event,ignore.case=TRUE,value=TRUE, perl=TRUE))
+#unique(event)
+
+df_filtered$EVTYPE <- event
+```
+
+```{r, include=FALSE}
+tornados <- df_filtered %>% filter(EVTYPE =='TORNADO') %>%
+  filter(LATITUDE != 0) %>% filter(LONGITUDE != 0)
+tornados$LATITUDE <- tornados$LATITUDE/100
+tornados$LONGITUDE <- -tornados$LONGITUDE/100
+table(tornados$EVTYPE)
+names(tornados)[5] <- 'lat'
+names(tornados)[6] <- 'lng'
+head(tornados)
+tornados$EVTYPE <- as.factor(tornados$EVTYPE)
+tornados$INJURIES <- as.character(tornados$INJURIES)
+tornados$FATALITIES <- as.character(tornados$FATALITIES)
+
+```
+
+```{r, include=FALSE}
+map <- tornados %>% leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(clusterOptions = markerClusterOptions(), 
+                   popup= as.character(mapply(function(x,y) {
+                     HTML(sprintf("Injuries: %s<br/>
+                                  Fatalities: %s",x,y))},
+                     tornados$INJURIES,tornados$FATALITIES)))
+```
+
+```{r}
+map
+#hist(tornados$lat)
+#hist(tornados$lng)
+```

@@ -1,0 +1,12 @@
+base
+pacman
+knitr
+dplyr
+ggplot2
+tidyr
+hexbin
+timeDate
+gridExtra
+gtable
+leaflet
+htmltools
